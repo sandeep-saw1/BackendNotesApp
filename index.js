@@ -1,53 +1,78 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const session = require("express-session");
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(
+  session({
+    secret: "my-secret-key",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
 
 // Home Page
 app.get("/", (req, res) => {
-  fs.readdir("./files", function (err, files) {
+  const userFolder = `./files/${req.sessionID}`;
+
+  if (!fs.existsSync(userFolder)) {
+    fs.mkdirSync(userFolder, { recursive: true });
+  }
+
+  fs.readdir(userFolder, (err, files) => {
     if (err) return res.send("Error reading files");
 
-    res.render("index", { files: files });
+    res.render("index", { files });
   });
 });
 
 // Show Single File
 app.get("/files/:filename", (req, res) => {
+  const userFolder = `./files/${req.sessionID}`;
+
   fs.readFile(
-    `./files/${req.params.filename}.txt`,
+    `${userFolder}/${req.params.filename}.txt`,
     "utf-8",
-    function (err, filedata) {
+    (err, filedata) => {
       if (err) return res.send("File not found");
 
       res.render("show", {
         filename: req.params.filename,
-        filedata: filedata,
+        filedata,
       });
-    },
+    }
   );
 });
 
 // Create File
 app.post("/create", (req, res) => {
+  const userFolder = `./files/${req.sessionID}`;
+
+  if (!fs.existsSync(userFolder)) {
+    fs.mkdirSync(userFolder, { recursive: true });
+  }
+
   fs.writeFile(
-    `./files/${req.body.title.split(" ").join("")}.txt`,
+    `${userFolder}/${req.body.title.split(" ").join("")}.txt`,
     req.body.content,
-    function (err) {
+    (err) => {
       if (err) return res.send("Error creating file");
 
       res.redirect("/");
-    },
+    }
   );
 });
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
