@@ -1,0 +1,1 @@
+Computer programming is the process of writing step-by-step instructions that tell a computer how to perform a task or solve a problem. Programmers use special languages (like Python, JavaScript, or C++) to write code, which is then translated into machine language (binary) so the computer can understand and execute it.
